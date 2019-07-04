@@ -18,6 +18,7 @@ import com.google.ar.core.Session;
 import com.google.ar.core.TrackingState;
 import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.FrameTime;
+import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.Scene;
 import com.google.ar.sceneform.math.Vector3;
 import com.google.ar.sceneform.rendering.Color;
@@ -33,7 +34,7 @@ import java.net.URL;
 import java.util.Collection;
 
 public class MainActivity extends AppCompatActivity implements Scene.OnUpdateListener {
-  private ExternalTexture texture;
+    private ExternalTexture texture;
     private MediaPlayer mediaPlayer;
 
     private Scene scene;
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity implements Scene.OnUpdateLis
     private boolean isImageDetected = false;
     private Anchor videoAnchor;
     private Node videoNode;
+    private AnchorNode anchorNode, anchorNode2;
 
     private CustomArFragment arFragment;
     @Override
@@ -49,9 +51,9 @@ public class MainActivity extends AppCompatActivity implements Scene.OnUpdateLis
         setContentView(R.layout.activity_main);
 
         //ExternalTexture texture = new ExternalTexture();
-       texture = new ExternalTexture();
+        texture = new ExternalTexture();
 
-       // Uri uri = Uri.parse("vnd.youtube://" + "fqyW-uvEbDE");
+        // Uri uri = Uri.parse("vnd.youtube://" + "fqyW-uvEbDE");
         mediaPlayer =MediaPlayer.create(this,R.raw.video);
         mediaPlayer.setSurface(texture.getSurface());
         mediaPlayer.setLooping(true);
@@ -66,7 +68,7 @@ public class MainActivity extends AppCompatActivity implements Scene.OnUpdateLis
 
 
 
-       // mediaPlayer =MediaPlayer.create(this, uri);
+        // mediaPlayer =MediaPlayer.create(this, uri);
 
         arFragment = (CustomArFragment) getSupportFragmentManager().findFragmentById(R.id.fragment);
         scene = arFragment.getArSceneView().getScene();
@@ -105,71 +107,73 @@ public class MainActivity extends AppCompatActivity implements Scene.OnUpdateLis
         //Bitmap bit = BitmapFactory.decodeResource(getResources(),R.drawable.aws4);
 
 
-       // Bitmap bitmap = BitmapHelper.getInstance().getBitmap();
-      //  Bitmap bitmap2 = BitmapHelper.getInstance().getBitmap();
+        // Bitmap bitmap = BitmapHelper.getInstance().getBitmap();
+        //  Bitmap bitmap2 = BitmapHelper.getInstance().getBitmap();
         Bitmap bitmap1 = loadBitmapFromUrl("https://media.wired.com/photos/5b86fce8900cb57bbfd1e7ee/master/pass/Jaguar_I-PACE_S_Indus-Silver_065.jpg");
         Bitmap bitmap2 = loadBitmapFromUrl("https://images.techhive.com/images/article/2015/05/aws-logo-100584713-primary.idge.jpg");
         Bitmap bitmap3 = loadBitmapFromUrl("https://fsmedia.imgix.net/96/a2/69/e6/d499/40c5/a0d3/463c5ffb1ab9/justice-league-2017.jpeg?rect=0%2C536%2C2764%2C1390&auto=format%2Ccompress&dpr=2&w=650");
         System.out.println("bitmap1="+bitmap1);
         System.out.println("bitmap2="+bitmap2);
         System.out.println("bitmap3="+bitmap3);
-       // Bitmap flashBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.justiceleague2017);
+        // Bitmap flashBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.justiceleague2017);
         AugmentedImageDatabase aid = new AugmentedImageDatabase(session);
         aid.addImage("BitmapImage",bitmap1 );
         aid.addImage("BitmapImage2",bitmap2 );
         aid.addImage("BitmapImage3",bitmap3 );
-       // aid.addImage("justiceleague2017", flashBitmap);
+        // aid.addImage("justiceleague2017", flashBitmap);
         config.setAugmentedImageDatabase(aid);
 
     }
 
     @Override
     public void onUpdate(FrameTime frameTime) {
+        
+        if (videoAnchor != null && mediaPlayer != null) {
 
-      if (videoAnchor != null && mediaPlayer != null) {
-          
-          if (videoAnchor.getTrackingState() != TrackingState.TRACKING) {
-                
+            if (videoAnchor.getTrackingState() != TrackingState.TRACKING) {
+
                 if (mediaPlayer.isPlaying()) {
-                  videoNode.setParent (null);
-                  mediaPlayer.pause();
+                    videoNode.setParent (null);
+                    mediaPlayer.pause();
+                   
                 }
-            
-          } else {
-            
-            if (!mediaPlayer.isPlaying()) {
-              videoNode.setParent (videoAnchor);
-              mediaPlayer.start();
+
+            } else {
+
+                if (!mediaPlayer.isPlaying()) {
+                    videoNode.setParent (anchorNode);
+                    mediaPlayer.start();
+                }
+
             }
-            
-          }
-          
-      }
+
+        }
 
         Frame frame = arFragment.getArSceneView().getArFrame();
         Collection<AugmentedImage> images = frame.getUpdatedTrackables(AugmentedImage.class);
 
         for (AugmentedImage image : images ) {
+            if(isImageDetected)return;
+            if(image.getTrackingState() == TrackingState.TRACKING){
+                if (image.getName().equals("BitmapImage")) {
+                        isImageDetected =true;
+                    videoAnchor = image.createAnchor (image.getCenterPose());
+                    playVideo (image.getExtentX(),image.getExtentZ());
+                    break;
+                }
 
-          if(image.getTrackingState() == TrackingState.TRACKING){
-              if (image.getName().equals("BitmapImage")) {
-                
-                  videoAnchor = image.createAnchor (image.getCenterPose());
-                  playVideo (image.getExtentX(),image.getExtentZ());
-              }
+                if (image.getName().equals("BitmapImage2")){
+                    String URL1= "https://aws.amazon.com/";
+                    Intent intent = new Intent(MainActivity.this,WebViewS.class);
+                    intent.putExtra("A", URL1);
+                    startActivity(intent);
+                }
 
-              if (image.getName().equals("BitmapImage2")){
-                  String URL1= "https://aws.amazon.com/";
-                  Intent intent = new Intent(MainActivity.this,WebViewS.class);
-                  intent.putExtra("A", URL1);
-                  startActivity(intent);
-              }
-
-              if (image.getName().equals("BitmapImage3")){
-                  Anchor anchor = image.createAnchor(image.getCenterPose());
-                  createModel(anchor);
-              }
-          }
+                if (image.getName().equals("BitmapImage3")){
+                    Anchor anchor = image.createAnchor(image.getCenterPose());
+                    createModel(anchor);
+                }
+            }
         }
     }
 
@@ -181,15 +185,15 @@ public class MainActivity extends AppCompatActivity implements Scene.OnUpdateLis
     }
 
     private void placeModel(ModelRenderable modelRenderable, Anchor anchor) {
-        AnchorNode anchorNode = new AnchorNode(anchor);
+        anchorNode = new AnchorNode(anchor);
         anchorNode.setRenderable(modelRenderable);
         arFragment.getArSceneView().getScene().addChild(anchorNode);
     }
 
     private void playVideo(float extentX, float extentZ) {
-      
+
         mediaPlayer.start();
-        AnchorNode anchorNode = new AnchorNode(videoAnchor);
+        anchorNode = new AnchorNode(videoAnchor);
         videoNode = new Node ();
         videoNode.setParent (anchorNode);
 
