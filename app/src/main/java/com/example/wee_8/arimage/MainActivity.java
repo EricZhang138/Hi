@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity implements Scene.OnUpdateLis
     private ModelRenderable renderable;
     private boolean isImageDetected = false;
     private Anchor videoAnchor;
+    private Node videoNode;
 
     private CustomArFragment arFragment;
     @Override
@@ -129,13 +130,17 @@ public class MainActivity extends AppCompatActivity implements Scene.OnUpdateLis
           
           if (videoAnchor.getTrackingState() != TrackingState.TRACKING) {
                 
-                if (mediaPlayer.isPlaying())
+                if (mediaPlayer.isPlaying()) {
+                  videoNode.setParent (null);
                   mediaPlayer.pause();
+                }
             
           } else {
             
-            if (!mediaPlayer.isPlaying())
+            if (!mediaPlayer.isPlaying()) {
+              videoNode.setParent (videoAnchor);
               mediaPlayer.start();
+            }
             
           }
           
@@ -185,13 +190,15 @@ public class MainActivity extends AppCompatActivity implements Scene.OnUpdateLis
       
         mediaPlayer.start();
         AnchorNode anchorNode = new AnchorNode(videoAnchor);
+        videoNode = new Node ();
+        videoNode.setParent (anchorNode);
 
         texture.getSurfaceTexture().setOnFrameAvailableListener(surfaceTexture -> {
-            anchorNode.setRenderable(renderable);
+            videoNode.setRenderable(renderable);
             texture.getSurfaceTexture().setOnFrameAvailableListener(null);
         });
 
-        anchorNode.setWorldScale(new Vector3(extentX,1f,extentZ));
+        videoNode.setWorldScale(new Vector3(extentX,1f,extentZ));
 
         scene.addChild(anchorNode);
     }
