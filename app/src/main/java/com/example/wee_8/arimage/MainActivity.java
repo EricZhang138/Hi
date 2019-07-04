@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity implements Scene.OnUpdateLis
     private Scene scene;
     private ModelRenderable renderable;
     private boolean isImageDetected = false;
+    private Anchor videoAnchor;
 
     private CustomArFragment arFragment;
     @Override
@@ -124,6 +125,21 @@ public class MainActivity extends AppCompatActivity implements Scene.OnUpdateLis
     @Override
     public void onUpdate(FrameTime frameTime) {
 
+      if (videoAnchor != null && mediaPlayer != null) {
+          
+          if (videoAnchor.getTrackingState() != TrackingState.TRACKING) {
+                
+                if (mediaPlayer.isPlaying())
+                  mediaPlayer.pause();
+            
+          } else {
+            
+            if (!mediaPlayer.isPlaying())
+              mediaPlayer.start();
+            
+          }
+          
+      }
 
         Frame frame = arFragment.getArSceneView().getArFrame();
         Collection<AugmentedImage> images = frame.getUpdatedTrackables(AugmentedImage.class);
@@ -131,8 +147,10 @@ public class MainActivity extends AppCompatActivity implements Scene.OnUpdateLis
         for (AugmentedImage image : images ) {
 
           if(image.getTrackingState() == TrackingState.TRACKING){
-              if (image.getName().equals("BitmapImage")){
-                  playVideo (image.createAnchor(image.getCenterPose()),image.getExtentX(),image.getExtentZ());
+              if (image.getName().equals("BitmapImage")) {
+                
+                  videoAnchor = image.createAnchor (image.getCenterPose());
+                  playVideo (image.getExtentX(),image.getExtentZ());
               }
 
               if (image.getName().equals("BitmapImage2")){
@@ -163,10 +181,10 @@ public class MainActivity extends AppCompatActivity implements Scene.OnUpdateLis
         arFragment.getArSceneView().getScene().addChild(anchorNode);
     }
 
-    private void playVideo(Anchor anchor, float extentX, float extentZ) {
-
+    private void playVideo(float extentX, float extentZ) {
+      
         mediaPlayer.start();
-        AnchorNode anchorNode = new AnchorNode(anchor);
+        AnchorNode anchorNode = new AnchorNode(videoAnchor);
 
         texture.getSurfaceTexture().setOnFrameAvailableListener(surfaceTexture -> {
             anchorNode.setRenderable(renderable);
